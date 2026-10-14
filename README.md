@@ -135,8 +135,3 @@ Without concurrency protection, two requests can both read the same employee wor
 - CSV export returns all tasks matching the active server filters, not just the visible current page.
 - The application does not include authentication because the assignment explicitly says no auth is required.
 - For local development, an in-memory MongoDB instance is used automatically when `MONGO_URI` is not present.
-
-## Upload and Deployment Notes
-
-The source code is ready in the local workspace. For deployment, the frontend can be built and served via Vercel or Netlify, while the backend can be deployed to Render or another Node hosting service with a MongoDB connection string.
-# Employee-Task-Management-System
