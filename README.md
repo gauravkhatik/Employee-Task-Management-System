@@ -136,36 +136,51 @@ Without concurrency protection, two requests can both read the same employee wor
 - The application does not include authentication because the assignment explicitly says no auth is required.
 - For local development, an in-memory MongoDB instance is used automatically when `MONGO_URI` is not present.
 
-## Separate Deployment
+## Separate Deployment (two Vercel projects)
 
-Deploy the frontend and backend as separate services from this repository. Do not commit `.env` files or local MongoDB data.
+Deploy the frontend and backend as **two Vercel projects** from the same Git repository. Do not commit `.env` files or local MongoDB data.
 
-### Render Backend
+Create a MongoDB Atlas cluster first. You will need the connection string before deploying the API.
 
-- Root Directory: `backend`
-- Build Command: `npm ci`
-- Start Command: `npm start`
+### 1. Vercel Backend (`backend`)
 
-Set these environment variables on the Render web service:
+In Vercel: **Add New → Project → import this repo**.
+
+- Project name: something like `roots-media-api`
+- Root Directory: `backend` (click Edit, then select `backend`)
+- Framework Preset: Vercel should detect **Express**
+- Build Command: leave default (none required)
+- Install Command: `npm install`
+
+Set these environment variables on the backend project (Settings → Environment Variables):
 
 - `NODE_ENV`: `production`
-- `MONGO_URI`: your MongoDB Atlas connection string
-- `CLIENT_URL`: the deployed Vercel frontend origin, such as `https://your-app.vercel.app`
-- `PORT`: supplied by Render; do not set it manually
+- `MONGO_URI`: MongoDB Atlas connection string
+- `MONGO_DB_NAME`: `roots_media` (optional if the URI already includes a database name)
+- `CLIENT_URL`: the frontend origin, such as `https://your-app.vercel.app` (comma-separated if you have production and preview URLs)
 
-### Vercel Frontend
+Deploy the backend, then open `https://<your-api>.vercel.app/api/health`. You should see `{ "ok": true, ... }`. Copy that project URL.
 
+The API must be **public**. In the backend project go to **Settings → Deployment Protection** and turn **Vercel Authentication off** (or protect Preview only). If the frontend gets login redirects, CORS errors, or 401s, this setting is still on. Use the Production domain from **Settings → Domains**, not a `*-projects.vercel.app` preview URL.
+
+### 2. Vercel Frontend (`client`)
+
+Add a **second** project from the same repo.
+
+- Project name: something like `roots-media-web`
 - Root Directory: `client`
-- Framework Preset: `Vite`
+- Framework Preset: **Vite**
 - Build Command: `npm run build`
 - Output Directory: `dist`
 
-Set this environment variable for Production and Preview deployments:
+Set this environment variable for Production and Preview (Vite inlines it at **build** time, so change it and redeploy if the API URL changes):
 
-- `VITE_API_URL`: the Render service URL ending in `/api`, such as `https://your-api.onrender.com/api`
+- `VITE_API_URL`: `https://<your-api>.vercel.app/api`
 
-The Vite development server proxies `/api` to `http://localhost:5001`. Vercel serves React Router deep links through `client/vercel.json`.
+After the frontend URL is known, update the backend `CLIENT_URL` to that exact origin (no trailing slash) and redeploy the backend so CORS allows the browser.
 
-### MongoDB Atlas
+`client/vercel.json` rewrites unknown paths to `index.html` so React Router deep links work. Locally, Vite still proxies `/api` to `http://localhost:5001`.
 
-Create a database user with only the permissions the application needs. Add the Render service's outbound IP addresses to Atlas Network Access when using static outbound IPs; otherwise use the narrowest network access option supported by your Render plan. Avoid unrestricted access where possible. Rotate any credential that has been exposed and store only the replacement in Render's environment settings.
+### 3. MongoDB Atlas
+
+Create a database user with only the permissions the application needs. Vercel serverless functions do not use a single static IP, so Atlas Network Access typically needs `0.0.0.0/0` (allow from anywhere) unless you use a plan with static outbound IPs. Restrict that user to this database only. Rotate any credential that has been exposed.

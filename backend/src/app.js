@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import employeeRoutes from './routes/employeeRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import connectDB from './config/db.js';
 
 // Load .env locally. Vercel uses configured environment variables.
 if (process.env.NODE_ENV !== 'production') {
@@ -46,8 +47,26 @@ app.use(
 
 app.use(express.json());
 
-// Health check: confirms the API responds.
-// It does not independently verify MongoDB connectivity.
+app.get('/', (req, res) => {
+  res.status(200).json({
+    ok: true,
+    message: 'Roots Media API',
+    health: '/api/health'
+  });
+});
+
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    const dbError = new Error('Database unavailable');
+    dbError.statusCode = 503;
+    next(dbError);
+  }
+});
+
+// Health check: confirms the API responds and MongoDB is reachable.
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     ok: true,

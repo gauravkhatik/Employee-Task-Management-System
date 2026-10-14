@@ -1,6 +1,8 @@
 import app from './app.js';
 import connectDB from './config/db.js';
 
+export default app;
+
 const startServer = async () => {
   try {
     await connectDB();
@@ -15,4 +17,6 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
