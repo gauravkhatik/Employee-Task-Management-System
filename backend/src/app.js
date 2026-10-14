@@ -17,7 +17,7 @@ const allowedOrigins = new Set(
 );
 
 if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.add('http://localhost:5173');
+  allowedOrigins.add('https://employee-task-management-system-frontend-2rxznevhb.vercel.app/');
 }
 
 app.use(
