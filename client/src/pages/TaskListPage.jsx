@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import api from '../lib/api';
+import api, { apiBaseUrl } from '../lib/api';
 import Pagination from '../components/Pagination';
 import StatusBadge from '../components/StatusBadge';
 
@@ -83,7 +83,7 @@ function TaskListPage() {
 
   const handleExport = () => {
     const params = new URLSearchParams(searchParams.toString());
-    window.open(`/api/tasks/export/csv?${params.toString()}`, '_blank');
+    window.open(`${apiBaseUrl}/tasks/export/csv?${params.toString()}`, '_blank');
   };
 
   const nextStatusMap = {

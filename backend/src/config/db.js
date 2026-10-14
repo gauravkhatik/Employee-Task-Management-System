@@ -24,6 +24,10 @@ const connectDB = async () => {
       return;
     }
 
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('MONGO_URI is required in production');
+    }
+
     memoryServer = await MongoMemoryServer.create({
       instance: {
         dbName: 'roots-media'
@@ -32,7 +36,7 @@ const connectDB = async () => {
 
     const uri = memoryServer.getUri();
     await mongoose.connect(uri);
-    console.log(`MongoDB connected to in-memory server: ${uri}`);
+  console.log('MongoDB connected to in-memory server');
   } catch (error) {
     console.error('MongoDB connection failed:', error.message);
     throw error;

@@ -22,7 +22,7 @@ This project is a complete employee and task management application built with t
 
 1. Copy the example environment file:
    ```bash
-   cp .env
+   cp .env.example .env
    ```
 2. Install backend dependencies:
    ```bash
@@ -135,3 +135,37 @@ Without concurrency protection, two requests can both read the same employee wor
 - CSV export returns all tasks matching the active server filters, not just the visible current page.
 - The application does not include authentication because the assignment explicitly says no auth is required.
 - For local development, an in-memory MongoDB instance is used automatically when `MONGO_URI` is not present.
+
+## Separate Deployment
+
+Deploy the frontend and backend as separate services from this repository. Do not commit `.env` files or local MongoDB data.
+
+### Render Backend
+
+- Root Directory: `backend`
+- Build Command: `npm ci`
+- Start Command: `npm start`
+
+Set these environment variables on the Render web service:
+
+- `NODE_ENV`: `production`
+- `MONGO_URI`: your MongoDB Atlas connection string
+- `CLIENT_URL`: the deployed Vercel frontend origin, such as `https://your-app.vercel.app`
+- `PORT`: supplied by Render; do not set it manually
+
+### Vercel Frontend
+
+- Root Directory: `client`
+- Framework Preset: `Vite`
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+Set this environment variable for Production and Preview deployments:
+
+- `VITE_API_URL`: the Render service URL ending in `/api`, such as `https://your-api.onrender.com/api`
+
+The Vite development server proxies `/api` to `http://localhost:5001`. Vercel serves React Router deep links through `client/vercel.json`.
+
+### MongoDB Atlas
+
+Create a database user with only the permissions the application needs. Add the Render service's outbound IP addresses to Atlas Network Access when using static outbound IPs; otherwise use the narrowest network access option supported by your Render plan. Avoid unrestricted access where possible. Rotate any credential that has been exposed and store only the replacement in Render's environment settings.
