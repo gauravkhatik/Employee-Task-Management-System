@@ -129,9 +129,3 @@ Using URL query params makes the current view shareable, reload-safe, and consis
 ### 6. What can go wrong if two requests assign a 4th active task at the same time
 Without concurrency protection, two requests can both read the same employee workload count and both believe there is capacity for one more active task. That leads to a race condition where the employee ends up with four active tasks, violating the rule. The backend should enforce this with atomic checks or server-side transactional logic.
 
-## Assumptions
-
-- A task can be assigned only to a valid active employee at the time of creation or update.
-- CSV export returns all tasks matching the active server filters, not just the visible current page.
-- The application does not include authentication because the assignment explicitly says no auth is required.
-- For local development, an in-memory MongoDB instance is used automatically when `MONGO_URI` is not present.
