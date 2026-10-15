@@ -9,7 +9,7 @@ function DashboardPage() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await api.get('/dashboard');
+        const response = await api.get('https://employee-task-management-system-bac.vercel.app/api/dashboard');
         setDashboard(response.data.data);
       } catch (error) {
         console.error(error);
