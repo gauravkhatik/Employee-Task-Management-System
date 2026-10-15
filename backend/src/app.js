@@ -10,9 +10,9 @@ import connectDB from './config/db.js';
 
 // Load local environment variables.
 // On Vercel, configure variables in Project Settings.
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config({ path: '../.env' });
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
   dotenv.config();
+  dotenv.config({ path: '../.env' });
 }
 
 const app = express();
@@ -50,13 +50,22 @@ function isAllowedOrigin(origin) {
     return true;
   }
 
-  // Allow Vercel preview deployments related to a configured frontend.
   let requestHostname;
 
   try {
     requestHostname = new URL(normalizedOrigin).hostname;
   } catch {
     return false;
+  }
+
+  // Allow all Vercel deployments (*.vercel.app) for preview and production
+  if (requestHostname.endsWith('.vercel.app')) {
+    return true;
+  }
+
+  // Allow localhost
+  if (requestHostname === 'localhost' || requestHostname === '127.0.0.1') {
+    return true;
   }
 
   for (const allowedOrigin of allowedOrigins) {
@@ -86,19 +95,22 @@ function isAllowedOrigin(origin) {
   return false;
 }
 
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origin not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
 // Register CORS before routes and database middleware.
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (isAllowedOrigin(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error('Origin not allowed by CORS'));
-    }
-  })
-);
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json());
 
@@ -106,7 +118,7 @@ app.use(express.json());
 // ROOT & HEALTH CHECK
 // --------------------------------------------------
 
-app.get('/', (req, res) => {
+app.get(['/', '/api'], (req, res) => {
   res.status(200).json({
     ok: true,
     message: 'Employee Task Management API',
@@ -132,7 +144,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.status(200).json({
     ok: true,
     message: 'API is running',
@@ -143,15 +155,15 @@ app.get('/api/health', (req, res) => {
 // API ROUTES
 // --------------------------------------------------
 
-app.use('/api/employees', employeeRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use(['/api/employees', '/employees'], employeeRoutes);
+app.use(['/api/tasks', '/tasks'], taskRoutes);
+app.use(['/api/dashboard', '/dashboard'], dashboardRoutes);
 
 // --------------------------------------------------
 // 404 HANDLER
 // --------------------------------------------------
 
-app.use('/api', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'API endpoint not found',

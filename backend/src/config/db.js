@@ -18,7 +18,7 @@ const connectDB = async () => {
     return mongoose.connection;
   }
 
-  if (connectionPromise) {
+  if (mongoose.connection.readyState === 2 && connectionPromise) {
     return connectionPromise;
   }
 
@@ -33,7 +33,7 @@ const connectDB = async () => {
         return mongoose.connection;
       }
 
-      if (process.env.NODE_ENV === 'production') {
+      if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
         throw new Error('MONGO_URI is required in production');
       }
 
