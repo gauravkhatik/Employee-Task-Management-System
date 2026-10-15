@@ -11,6 +11,7 @@ function EmployeeListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = Number(searchParams.get('page') || 1);
 
@@ -26,6 +27,7 @@ function EmployeeListPage() {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
+        setLoadError('');
         const response = await api.get('/employees', {
           params: {
             page: currentPage,
@@ -36,7 +38,7 @@ function EmployeeListPage() {
         setEmployees(response.data.data);
         setTotalPages(response.data.pagination.totalPages || 1);
       } catch (error) {
-        console.error(error);
+        setLoadError(error.response?.data?.message || 'Unable to load employees.');
       } finally {
         setLoading(false);
       }
@@ -137,7 +139,11 @@ function EmployeeListPage() {
                 </tr>
               </thead>
               <tbody>
-                {employees.length === 0 ? (
+                {loadError ? (
+                  <tr>
+                    <td colSpan="6" className="empty-state">{loadError}</td>
+                  </tr>
+                ) : employees.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="empty-state">No employees found.</td>
                   </tr>

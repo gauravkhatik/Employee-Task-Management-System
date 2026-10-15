@@ -7,10 +7,14 @@ function EmployeeDetailPage() {
   const { id } = useParams();
   const [employee, setEmployee] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setErrorMessage('');
         const employeeResponse = await api.get(`/employees/${id}`);
         setEmployee(employeeResponse.data.data);
 
@@ -19,14 +23,18 @@ function EmployeeDetailPage() {
         });
         setTasks(tasksResponse.data.data.filter((task) => task.assignedEmployee?._id === id));
       } catch (error) {
-        console.error(error);
+        setErrorMessage(error.response?.data?.message || 'Unable to load employee details.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, [id]);
 
-  if (!employee) return <div className="panel">Loading employee details...</div>;
+  if (loading) return <div className="panel">Loading employee details...</div>;
+  if (errorMessage) return <div className="panel">{errorMessage}</div>;
+  if (!employee) return <div className="panel">Employee not found.</div>;
 
   return (
     <div>

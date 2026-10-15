@@ -12,6 +12,7 @@ function TaskListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [totalPages, setTotalPages] = useState(1);
   const currentPage = Number(searchParams.get('page') || 1);
 
@@ -29,6 +30,7 @@ function TaskListPage() {
     const fetchTasks = async () => {
       try {
         setLoading(true);
+        setLoadError('');
         const response = await api.get('/tasks', {
           params: {
             page: currentPage,
@@ -39,7 +41,7 @@ function TaskListPage() {
         setTasks(response.data.data);
         setTotalPages(response.data.pagination.totalPages || 1);
       } catch (error) {
-        console.error(error);
+        setLoadError(error.response?.data?.message || 'Unable to load tasks.');
       } finally {
         setLoading(false);
       }
@@ -87,7 +89,7 @@ function TaskListPage() {
   };
 
   const nextStatusMap = {
-    Todo: ['In Progress', 'Completed', 'Cancelled'],
+    Todo: ['In Progress', 'Cancelled'],
     'In Progress': ['Completed', 'Cancelled']
   };
 
@@ -141,6 +143,13 @@ function TaskListPage() {
               <option value="title">Title</option>
             </select>
           </div>
+          <div className="field-row">
+            <label>Order</label>
+            <select value={filters.sortOrder} onChange={(event) => updateQuery({ sortOrder: event.target.value })}>
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
         </div>
 
         {loading ? <div className="empty-state">Loading tasks...</div> : (
@@ -158,7 +167,11 @@ function TaskListPage() {
                 </tr>
               </thead>
               <tbody>
-                {tasks.length === 0 ? (
+                {loadError ? (
+                  <tr>
+                    <td colSpan="7" className="empty-state">{loadError}</td>
+                  </tr>
+                ) : tasks.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="empty-state">No tasks found.</td>
                   </tr>
@@ -181,7 +194,9 @@ function TaskListPage() {
                           </select>
                         ) : null}
                         <Link to={`/tasks/${task._id}`} className="action-link">View</Link>
-                        <Link to={`/tasks/${task._id}/edit`} className="action-link">Edit</Link>
+                        {!['Completed', 'Cancelled'].includes(task.status) && (
+                          <Link to={`/tasks/${task._id}/edit`} className="action-link">Edit</Link>
+                        )}
                       </div>
                     </td>
                   </tr>

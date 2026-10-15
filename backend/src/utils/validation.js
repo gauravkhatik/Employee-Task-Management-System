@@ -4,7 +4,7 @@ export const TASK_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];
 export const TASK_STATUSES = ['Todo', 'In Progress', 'Completed', 'Cancelled'];
 
 export const VALID_STATUS_FLOW = {
-  Todo: ['In Progress', 'Completed', 'Cancelled'],
+  Todo: ['In Progress', 'Cancelled'],
   'In Progress': ['Completed', 'Cancelled']
 };
 
@@ -53,7 +53,13 @@ export const validateStatusTransition = (currentStatus, nextStatus) => {
 export const isOverdue = (task) => {
   if (!task || !task.dueDate) return false;
   if (task.status === 'Completed' || task.status === 'Cancelled') return false;
-  return new Date() > new Date(task.dueDate);
+
+  const dueDate = new Date(task.dueDate);
+  const dueDay = Date.UTC(dueDate.getUTCFullYear(), dueDate.getUTCMonth(), dueDate.getUTCDate());
+  const currentDate = new Date();
+  const currentDay = Date.UTC(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate());
+
+  return currentDay > dueDay;
 };
 
 export const normalizePagination = (page, limit) => {

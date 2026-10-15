@@ -32,8 +32,9 @@ const allowedOrigins = new Set(
     .filter((origin) => origin && origin !== '*')
 );
 
-// Allow local Vite development.
-allowedOrigins.add('https://employee-task-management-system-frontend-jujzwkvde.vercel.app/');
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.add('http://localhost:5173');
+}
 
 function isAllowedOrigin(origin) {
   // Requests without Origin, such as server-to-server requests.
@@ -87,7 +88,17 @@ function isAllowedOrigin(origin) {
 
 
 // Register CORS before routes and database middleware.
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error('Origin not allowed by CORS'));
+    }
+  })
+);
 
 app.use(express.json());
 
@@ -157,21 +168,32 @@ app.use((err, req, res, next) => {
     return next(err);
   }
 
-  if (err.message === 'Origin not allowed by CORS') {
-    return res.status(403).json({
-      success: false,
-      message: 'Origin not allowed by CORS',
-    });
+  const duplicateField = Object.keys(err.keyPattern || {})[0];
+  const duplicateMessages = {
+    employeeId: 'Employee ID already exists.',
+    email: 'Email is already in use.'
+  };
+  const isDuplicateKeyError = err.code === 11000;
+  const statusCode = isDuplicateKeyError
+    ? 409
+    : err.message === 'Origin not allowed by CORS'
+      ? 403
+      : err.statusCode || 500;
+  const message = isDuplicateKeyError
+    ? duplicateMessages[duplicateField] || 'A record with this value already exists.'
+    : statusCode < 500
+      ? err.message || 'Request failed'
+      : statusCode === 503
+        ? 'Database unavailable'
+        : 'Internal server error';
+
+  if (statusCode >= 500) {
+    console.error('Server error:', err.message);
   }
 
-  console.error('Server error:', err.message);
-
-  res.status(err.statusCode || 500).json({
+  res.status(statusCode).json({
     success: false,
-    message:
-      err.statusCode === 503
-        ? 'Database unavailable'
-        : 'Internal server error',
+    message,
   });
 });
 

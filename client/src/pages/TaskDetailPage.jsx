@@ -4,20 +4,25 @@ import api from '../lib/api';
 import StatusBadge from '../components/StatusBadge';
 
 const nextStatusMap = {
-  Todo: ['In Progress', 'Completed', 'Cancelled'],
+  Todo: ['In Progress', 'Cancelled'],
   'In Progress': ['Completed', 'Cancelled']
 };
 
 function TaskDetailPage() {
   const { id } = useParams();
   const [task, setTask] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const fetchTask = async () => {
     try {
+      setErrorMessage('');
       const response = await api.get(`/tasks/${id}`);
       setTask(response.data.data);
     } catch (error) {
-      console.error(error);
+      setErrorMessage(error.response?.data?.message || 'Unable to load task details.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -34,14 +39,18 @@ function TaskDetailPage() {
     }
   };
 
-  if (!task) return <div className="panel">Loading task details...</div>;
+  if (loading) return <div className="panel">Loading task details...</div>;
+  if (errorMessage) return <div className="panel">{errorMessage}</div>;
+  if (!task) return <div className="panel">Task not found.</div>;
 
   return (
     <div>
       <div className="page-header">
         <h1>{task.title}</h1>
         <div className="action-row">
-          <Link to={`/tasks/${id}/edit`} className="secondary-btn">Edit</Link>
+          {!['Completed', 'Cancelled'].includes(task.status) && (
+            <Link to={`/tasks/${id}/edit`} className="secondary-btn">Edit</Link>
+          )}
         </div>
       </div>
 
@@ -56,6 +65,7 @@ function TaskDetailPage() {
             <li><span>Start Date</span><strong>{new Date(task.startDate).toLocaleDateString()}</strong></li>
             <li><span>Due Date</span><strong>{new Date(task.dueDate).toLocaleDateString()}</strong></li>
             <li><span>Created Date</span><strong>{new Date(task.createdDate).toLocaleDateString()}</strong></li>
+            {task.completedDate && <li><span>Completed Date</span><strong>{new Date(task.completedDate).toLocaleDateString()}</strong></li>}
           </ul>
         </div>
 

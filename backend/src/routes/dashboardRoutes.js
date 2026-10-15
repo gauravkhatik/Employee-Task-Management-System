@@ -16,9 +16,11 @@ router.get('/', async (req, res, next) => {
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
 
+    const startOfToday = new Date();
+    startOfToday.setUTCHours(0, 0, 0, 0);
     const overdueTasks = await Task.countDocuments({
       status: { $nin: ['Completed', 'Cancelled'] },
-      dueDate: { $lt: new Date() }
+      dueDate: { $lt: startOfToday }
     });
 
     const employeeLoad = await Task.aggregate([

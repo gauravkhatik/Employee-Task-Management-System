@@ -153,7 +153,7 @@ export const getTaskById = async (req, res, next) => {
 export const createTask = async (req, res, next) => {
   try {
     const payload = sanitizeTaskPayload(req.body);
-    payload.status = payload.status || 'Todo';
+    payload.status = 'Todo';
     validateTaskData(payload);
 
     const employee = await Employee.findById(payload.assignedEmployee);
