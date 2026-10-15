@@ -85,26 +85,9 @@ function isAllowedOrigin(origin) {
   return false;
 }
 
-const corsOptions = {
-  origin(origin, callback) {
-    if (isAllowedOrigin(origin)) {
-      return callback(null, true);
-    }
-
-    console.warn('Blocked CORS origin:', origin);
-    return callback(new Error('Origin not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  optionsSuccessStatus: 204,
-};
 
 // Register CORS before routes and database middleware.
-app.use(cors(corsOptions));
-
-// Explicitly handle browser preflight requests.
-app.options(/.*/, cors(corsOptions));
+app.use(cors());
 
 app.use(express.json());
 
